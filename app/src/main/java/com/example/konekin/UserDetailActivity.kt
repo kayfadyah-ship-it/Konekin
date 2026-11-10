@@ -34,7 +34,7 @@ class UserDetailActivity : AppCompatActivity() {
         client.getUserDetail(id).enqueue(object : Callback<UserDetail> {
             override fun onResponse(call: Call<UserDetail>, response: Response<UserDetail>) {
                 if (response.isSuccessful && response.body()?.data != null) {
-                    val user = response.body()!!.data!!
+                    val user = response.body()?.data
 
                     binding.tvId.text = "ID: ${user.id}"
                     binding.tvName.text = "Name: ${user.employeeName}"

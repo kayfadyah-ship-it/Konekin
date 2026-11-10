@@ -24,22 +24,24 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val client = ApiClient.getInstance()
-        val response = client.getAllUsers()
         val userList = ArrayList<String>()
-        val userListData = ArrayList<Data>() // Menampung objek Data lengkap untuk mengambil ID
+        val userListData = ArrayList<Data>()
 
-        response.enqueue(object : Callback<Users> {
+        val client = ApiClient.getInstance()
+        val responseCall = client.getAllUsers()
+
+        responseCall.enqueue(object : Callback<Users> {
             override fun onResponse(call: Call<Users>, response: Response<Users>) {
-                if (response.isSuccessful && response.body() != null) {
-                    val dataFromApi = response.body()!!.data
+                if (response.isSuccessful && response.body()?.data != null) {
+                    val dataFromApi = response.body()?.data ?: emptyList()
 
-                    // 1. Simpan semua objek data ke list agar ID-nya tidak hilang
+                    userListData.clear()
+                    userList.clear()
+
                     userListData.addAll(dataFromApi)
 
-                    // 2. Ambil nama untuk ditampilkan di ListView
                     for (i in dataFromApi) {
-                        userList.add(i.employeeName)
+                        userList.add(i.employeeName ?: "Tanpa Nama")
                     }
 
                     val listAdapter = ArrayAdapter(
@@ -48,25 +50,23 @@ class MainActivity : AppCompatActivity() {
                         userList
                     )
                     binding.lvNama.adapter = listAdapter
+                } else {
+                    Toast.makeText(this@MainActivity, "Gagal memuat data (HTTP ${response.code()})", Toast.LENGTH_SHORT).show()
                 }
             }
+
             override fun onFailure(call: Call<Users>, t: Throwable) {
-                Toast.makeText(this@MainActivity, "Koneksi error",
-                    Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "Koneksi Error: ${t.message}", Toast.LENGTH_LONG).show()
             }
         })
 
-        // 3. Tambahkan event listener saat item ListView diklik
         binding.lvNama.setOnItemClickListener { _, _, position, _ ->
-            if (userListData.isNotEmpty()) {
+            if (position < userListData.size) {
                 val selectedUser = userListData[position]
-
-                // Buka UserDetailActivity sambil membawa data ID
                 val intent = Intent(this@MainActivity, UserDetailActivity::class.java)
-                intent.putExtra("EXTRA_ID", selectedUser.id)
+                intent.putExtra("EXTRA_ID", selectedUser.id ?: -1)
                 startActivity(intent)
             }
         }
-
     }
 }
